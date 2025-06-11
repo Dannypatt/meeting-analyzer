@@ -4,6 +4,7 @@ import threading
 import json
 import os
 import ollama # Importar ollama al inicio para mejor gestión de dependencias
+from datetime import datetime # ¡Importar datetime!
 
 # Importar las funciones de los módulos separados
 from audio_processor import transcribe_audio
@@ -22,7 +23,6 @@ class MeetingMinutesApp:
 
         self._create_widgets()
         # Llamar a _load_ollama_models después de que la ventana principal esté lista
-        # Usamos .after() para que se ejecute en el event loop principal después de la inicialización
         self.root.after(100, self._load_ollama_models) # Retraso de 100ms
 
     def _create_widgets(self):
@@ -57,12 +57,12 @@ class MeetingMinutesApp:
         self.temp_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
 
         ttk.Label(param_frame, text="Tokens Máx. (200-8000):").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
-        self.tokens_var = tk.IntVar(value=4096)
+        self.tokens_var = tk.IntVar(value=8192) # Aumentado por defecto
         self.tokens_entry = ttk.Entry(param_frame, textvariable=self.tokens_var, width=10)
         self.tokens_entry.grid(row=0, column=3, padx=5, pady=5, sticky=tk.W)
         
         ttk.Label(param_frame, text="Contexto (num_ctx):").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.ctx_var = tk.IntVar(value=4096)
+        self.ctx_var = tk.IntVar(value=16384) # Aumentado por defecto
         self.ctx_entry = ttk.Entry(param_frame, textvariable=self.ctx_var, width=10)
         self.ctx_entry.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
         
@@ -223,9 +223,9 @@ class MeetingMinutesApp:
             self.root.update_idletasks() # Forzar actualización de la GUI
             transcription = transcribe_audio(self.audio_file_path)
             
-            # --- AÑADE ESTA LÍNEA PARA DEBUGGING ---
+            # --- DEBUGGING ---
             print(f"DEBUG: Transcripción obtenida (primeros 500 chars):\n{transcription[:500]}...") 
-            # ----------------------------------------
+            # -----------------
 
             if not transcription:
                 raise ValueError("La transcripción del audio falló o no produjo texto.")
@@ -238,10 +238,17 @@ class MeetingMinutesApp:
                 "temperature": self.temp_var.get(),
                 "num_predict": self.tokens_var.get(),
                 "num_ctx": self.ctx_var.get(),
-                # Añadir top_k, top_p si se implementan en la GUI
             }
             
-            meeting_data_json = generate_minutes_with_ollama(transcription, selected_model, ollama_params)
+            # --- ¡NUEVO! Obtener la fecha actual ---
+            today_date = datetime.now().strftime("%Y-%m-%d")
+
+            meeting_data_json = generate_minutes_with_ollama(
+                transcription,
+                selected_model,
+                ollama_params,
+                current_date=today_date # Pasar la fecha actual al procesador
+            )
             
             # Formatear el resultado para mostrar en el Text widget
             formatted_output = self._format_meeting_data_for_display(meeting_data_json)
@@ -249,11 +256,12 @@ class MeetingMinutesApp:
             self.minutes_text.config(state=tk.NORMAL)
             self.minutes_text.delete(1.0, tk.END)
             self.minutes_text.insert(tk.END, formatted_output)
-            self.minutes_text.config(state=tk.DISABLED)
+            # Ya no lo deshabilitamos para permitir la edición
+            # self.minutes_text.config(state=tk.DISABLED)
 
             self.export_pdf_button.config(state=tk.NORMAL)
             self.copy_button.config(state=tk.NORMAL)
-            self.status_label.config(text="Estado: Acta generada con éxito.", foreground="green")
+            self.status_label.config(text="Estado: Acta generada. Puede editarla antes de exportar.", foreground="green")
             self.generated_meeting_data = meeting_data_json # Guardar para PDF
 
         except Exception as e:
@@ -265,9 +273,6 @@ class MeetingMinutesApp:
     def _format_meeting_data_for_display(self, data):
         # Esta función convierte el JSON del acta a un formato de texto legible para la vista previa
         
-        # El LLM puede anidar los datos bajo 'reunion' o no.
-        # En este caso, el JSON principal es el que se usa.
-        
         output = []
         output.append(f"--- ACTA DE REUNIÓN ---")
         
@@ -275,7 +280,7 @@ class MeetingMinutesApp:
         output.append(f"Fecha: {data.get('fecha_reunion', 'N/A')} | Hora: {data.get('hora_inicio', 'N/A')} - {data.get('hora_fin', 'N/A')}")
         output.append(f"Ubicación: {data.get('ubicacion', 'N/A')}")
 
-        # Participantes: Ahora es una lista de objetos
+        # Participantes: Lista de objetos
         participantes_list = data.get('participantes', [])
         if participantes_list:
             participantes_str_list = []
@@ -287,7 +292,7 @@ class MeetingMinutesApp:
         else:
             output.append("Participantes: No identificados")
         
-        # Ausentes: También puede ser una lista de objetos
+        # Ausentes: Lista de objetos
         ausentes_list = data.get('ausentes', [])
         if ausentes_list:
             ausentes_str_list = []
@@ -404,7 +409,8 @@ class MeetingMinutesApp:
             # Habilitar temporalmente el Text widget para copiar su contenido
             self.minutes_text.config(state=tk.NORMAL)
             text_to_copy = self.minutes_text.get(1.0, tk.END)
-            self.minutes_text.config(state=tk.DISABLED) # Volver a deshabilitar
+            # Volver a deshabilitar si no quieres que el usuario edite
+            self.minutes_text.config(state=tk.DISABLED) 
 
             self.root.clipboard_clear()
             self.root.clipboard_append(text_to_copy)

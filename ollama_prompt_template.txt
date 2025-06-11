@@ -1,6 +1,9 @@
 Eres un asistente experto en la creación de actas de reunión. Tu tarea es analizar la siguiente transcripción y generar un acta formal en formato JSON. La salida DEBE SER ÚNICAMENTE el objeto JSON, sin ningún texto adicional antes o después.
 
+CONTEXTO ADICIONAL: La fecha de hoy es {current_date}. Si no se menciona una fecha explícita en la reunión, puedes usar la fecha de hoy o inferir una fecha reciente basada en este contexto.
+
 TRANSCRIPCIÓN DE LA REUNIÓN:
+
 {transcription_text}
 {{
   "titulo_reunion": "[Título conciso y descriptivo de la reunión. Ejemplo: Revisión de Políticas de Seguridad Q3]",

@@ -13,7 +13,7 @@ def transcribe_audio(file_path):
         # Cargar el modelo Whisper. Puedes elegir 'tiny', 'base', 'small', 'medium', 'large'
         # 'base' es un buen equilibrio entre velocidad y precisión para empezar.
         # Puedes especificar 'model = whisper.load_model("base", device="cuda")' si tienes GPU NVIDIA
-        model = whisper.load_model("base", device="cpu") 
+        model = whisper.load_model("large", device="cpu") 
         
         # Realizar la transcripción
         result = model.transcribe(file_path)

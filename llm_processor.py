@@ -7,7 +7,6 @@ import os
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://localhost:11434')
 
 # Define la ruta al archivo del prompt
-# Esto asegura que el archivo se encuentre sin importar desde dónde se ejecute el script principal
 PROMPT_FILE = os.path.join(os.path.dirname(__file__), 'ollama_prompt_template.txt')
 
 # Cargar el prompt desde el archivo
@@ -19,14 +18,17 @@ except FileNotFoundError:
 except Exception as e:
     raise RuntimeError(f"Error al cargar el archivo de prompt: {e}")
 
-def generate_minutes_with_ollama(transcription_text: str, model_name: str, params: dict) -> dict:
+def generate_minutes_with_ollama(transcription_text: str, model_name: str, params: dict, current_date: str) -> dict:
     """
     Envía la transcripción a Ollama y procesa la respuesta para obtener el acta.
     """
     client = ollama.Client(host=OLLAMA_HOST)
 
-    # Formatear el prompt con la transcripción
-    prompt_formatted = OLLAMA_PROMPT.format(transcription_text=transcription_text)
+    # Formatear el prompt con la transcripción Y la fecha actual
+    prompt_formatted = OLLAMA_PROMPT.format(
+        current_date=current_date, 
+        transcription_text=transcription_text
+    )
 
     # --- DEBUGGING ---
     print(f"DEBUG: Prompt enviado a Ollama (primeros 500 chars):\n{prompt_formatted[:500]}...")
