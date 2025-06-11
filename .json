@@ -1,0 +1,71 @@
+{{
+  "titulo_reunion": "[Título conciso y descriptivo de la reunión. Ejemplo: Revisión de Políticas de Seguridad Q3]",
+  "fecha_reunion": "[Fecha de la reunión en formato AAAA-MM-DD. Si no se puede inferir, usar 'No especificada']",
+  "hora_inicio": "[Hora de inicio de la reunión en formato HH:MM. Si no se puede inferir, usar 'No especificada']",
+  "hora_fin": "[Hora de fin de la reunión en formato HH:MM. Si no se puede inferir, usar 'No especificada']",
+  "ubicacion": "[Lugar de la reunión. Ejemplo: Sala de Conferencias A, Remoto (Teams). Si no se puede inferir, usar 'No especificada']",
+  "participantes": [
+    {{ "nombre": "[Nombre completo del participante 1]", "rol": "[Rol o departamento del participante 1, si se menciona]" }},
+    {{ "nombre": "[Nombre completo del participante 2]", "rol": "[Rol o departamento del participante 2, si se menciona]" }}
+    // Lista todos los participantes identificados. Si solo se mencionan nombres sin apellido, úsalos. Si no se pueden identificar roles, omite la clave 'rol'.
+  ],
+  "ausentes": [
+    {{ "nombre": "[Nombre completo del participante ausente 1]", "motivo_ausencia": "[Motivo si se menciona, si no, omitir]" }}
+    // Lista los participantes ausentes identificados.
+  ],
+  "resumen_ejecutivo": "Un párrafo breve (2-4 frases) que resuma el propósito principal de la reunión, los puntos más importantes discutidos y los resultados clave o decisiones principales.",
+  "objetivos_reunion": [
+    "[Objetivo 1 claro y conciso de la reunión, si se menciona explícitamente]",
+    "[Objetivo 2 claro y conciso de la reunión, si se menciona explícitamente]"
+    // Lista los objetivos principales que se buscaban alcanzar con la reunión.
+  ],
+  "temas_discutidos_y_puntos_clave": [
+    {{
+      "tema": "[Tema principal 1 discutido]",
+      "puntos_clave": [
+        "[Punto clave o detalle importante 1 sobre el tema 1]",
+        "[Punto clave o detalle importante 2 sobre el tema 1]"
+      ],
+      "responsable_tema": "[Persona que lideró la discusión sobre este tema, si se menciona]"
+    }},
+    {{
+      "tema": "[Tema principal 2 discutido]",
+      "puntos_clave": [
+        "[Punto clave o detalle importante 1 sobre el tema 2]"
+      ],
+      "responsable_tema": "[Persona que lideró la discusión sobre este tema, si se menciona]"
+    }}
+    // Para cada tema principal, lista los puntos clave o detalles más relevantes de la discusión.
+  ],
+  "decisiones_clave_tomadas": [
+    {{
+      "decision": "[Descripción clara y concisa de la decisión tomada 1]",
+      "acordada_por": "[Quiénes acordaron esta decisión o si fue unánime, si se menciona]"
+    }},
+    {{
+      "decision": "[Descripción clara y concisa de la decisión tomada 2]",
+      "acordada_por": "[Quiénes acordaron esta decisión o si fue unánime, si se menciona]"
+    }}
+    // Lista todas las decisiones importantes que se tomaron durante la reunión.
+  ],
+  "tareas_pendientes": [
+    {{
+      "tarea": "[Descripción detallada de la tarea pendiente 1]",
+      "responsable": "[Nombre completo de la persona o equipo responsable de la tarea 1]",
+      "fecha_limite": "[Fecha límite para completar la tarea 1 en formato AAAA-MM-DD. Si no se especifica, usar 'No especificada']"
+    }},
+    {{
+      "tarea": "[Descripción detallada de la tarea pendiente 2]",
+      "responsable": "[Nombre completo de la persona o equipo responsable de la tarea 2]",
+      "fecha_limite": "[Fecha límite para completar la tarea 2 en formato AAAA-MM-DD. Si no se especifica, usar 'No especificada']"
+    }}
+    // Lista todas las tareas o acciones que surgieron de la reunión, con su responsable y fecha límite si se mencionan.
+  ],
+  "proximos_pasos_o_siguiente_reunion": "[Descripción de los próximos pasos generales, o detalles de la próxima reunión (fecha, hora, tema) si se acordó. Si no hay, usar 'No especificado'].",
+  "notas_adicionales": "[Cualquier otra observación, comentario importante, obstáculo mencionado, o información relevante que no encaje en las secciones anteriores. Si no hay, usar 'Ninguna'].",
+  "documentos_referenciados": [
+    "[Nombre o descripción del documento 1 mencionado o referenciado]",
+    "[Nombre o descripción del documento 2 mencionado o referenciado]"
+    // Lista cualquier documento, presentación o enlace que se haya mencionado como referencia.
+  ]
+}}
