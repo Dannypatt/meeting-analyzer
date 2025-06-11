@@ -58,10 +58,8 @@ IGNORE_WHEN_COPYING_END
 🐳 Método 1: Ejecutar con Docker (Recomendado)
 
 Este método simplifica todas las dependencias de Python y FFmpeg.
-
-    Clona el repositorio:
-
-          
+    bash
+    docker pull dannypat88/meeting-analyzer:latest  
     git clone https://github.com/Dannypatt/meeting-analyzer.git
     cd meeting-analyzer/root_dir
 
@@ -125,8 +123,7 @@ docker run -it --rm \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v ${PWD}/audios:/home/appuser/app/audios \
   -v ${PWD}/pdfs:/home/appuser/app/pdfs \
-  meeting-analyzer-app
-
+  dannypat88/meeting-analyzer:latest
     
 
 IGNORE_WHEN_COPYING_START
@@ -137,6 +134,10 @@ IGNORE_WHEN_COPYING_START
         Nota: 172.17.0.1 es la IP por defecto del host de Docker en Linux. Si no funciona, obtén la tuya con ip addr show docker0.
 
         Ahora, cuando la aplicación se abra, puedes seleccionar archivos de tu carpeta audios y guardar los PDFs en tu carpeta pdfs.
+
+# 📝 Acta de Reunión Inteligente
+
+[![Docker Hub](https://img.shields.io/docker/pulls/dannypat88/meeting-analyzer?style=for-the-badge&logo=docker)](https://hub.docker.com/r/dannypat88/meeting-analyzer)
 
 🐍 Método 2: Ejecutar Localmente (con Entorno Virtual)
 
