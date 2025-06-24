@@ -1,80 +1,69 @@
 import ollama
-import json
 import os
+from datetime import datetime
+from llm_clients import generate_with_openai, generate_with_anthropic, generate_with_google
 
-# Configurar el host de Ollama desde una variable de entorno,
-# con 'http://localhost:11434' como valor predeterminado si no se especifica.
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://localhost:11434')
-
-# Define la ruta al archivo del prompt
 PROMPT_FILE = os.path.join(os.path.dirname(__file__), 'ollama_prompt_template.txt')
-
-# Cargar el prompt desde el archivo
 try:
     with open(PROMPT_FILE, 'r', encoding='utf-8') as f:
-        OLLAMA_PROMPT = f.read()
+        OLLAMA_PROMPT_TEMPLATE = f.read()
 except FileNotFoundError:
     raise RuntimeError(f"Error: El archivo de plantilla del prompt no se encontró en: {PROMPT_FILE}")
-except Exception as e:
-    raise RuntimeError(f"Error al cargar el archivo de prompt: {e}")
 
-def generate_minutes_with_ollama(transcription_text: str, model_name: str, params: dict, current_date: str) -> dict:
+def generate_minutes(provider: str, model_name: str, transcription_text: str, user_context: str, params: dict) -> str:
     """
-    Envía la transcripción a Ollama y procesa la respuesta para obtener el acta.
+    Función principal que despacha la solicitud al proveedor de LLM correcto para generar MARKDOWN.
     """
-    client = ollama.Client(host=OLLAMA_HOST)
-
-    # Formatear el prompt con la transcripción Y la fecha actual
-    prompt_formatted = OLLAMA_PROMPT.format(
-        current_date=current_date, 
+    today_date = datetime.now().strftime("%Y-%m-%d")
+    prompt_formatted = OLLAMA_PROMPT_TEMPLATE.format(
+        user_context=user_context if user_context else "Ninguno.",
+        current_date=today_date, 
         transcription_text=transcription_text
     )
+    
+    acta_markdown = ""
 
-    # --- DEBUGGING ---
-    print(f"DEBUG: Prompt enviado a Ollama (primeros 500 chars):\n{prompt_formatted[:500]}...")
-    print(f"DEBUG: Longitud total del prompt: {len(prompt_formatted)} caracteres.")
-    # -----------------
-
-    options = {
-        "temperature": params.get("temperature", 0.7),
-        "num_predict": params.get("num_predict", 8192), # Aumentado por defecto
-        "num_ctx": params.get("num_ctx", 16384)       # Aumentado por defecto
-    }
+    print(f"DEBUG: Enviando solicitud a {provider} con el modelo {model_name}...")
 
     try:
-        response = client.generate(
-            model=model_name,
-            prompt=prompt_formatted,
-            options=options,
-            format='json' # Pide a Ollama que la salida sea JSON
-        )
+        if provider == "Ollama":
+            client = ollama.Client(host=OLLAMA_HOST)
+            response = client.generate(
+                model=model_name,
+                prompt=prompt_formatted,
+                options={
+                    "temperature": params.get("temperature"),
+                    "num_predict": params.get("num_predict"),
+                    "num_ctx": params.get("num_ctx")
+                }
+                # ¡Ya no forzamos el formato JSON!
+            )
+            acta_markdown = response.get('response', '')
         
-        raw_json_str = response['response']
+        # La lógica para otros proveedores se puede adaptar para que también devuelvan Markdown
+        elif provider == "OpenAI":
+            # Nota: generate_with_openai necesita ser adaptado para no forzar JSON
+            acta_markdown = generate_with_openai(prompt_formatted, model_name) 
+        elif provider == "Anthropic":
+            # Nota: generate_with_anthropic necesita ser adaptado para no forzar JSON
+            acta_markdown = generate_with_anthropic(prompt_formatted, model_name)
+        elif provider == "Google":
+             # Nota: generate_with_google necesita ser adaptado para no forzar JSON
+            acta_markdown = generate_with_google(prompt_formatted, model_name)
+        else:
+            raise ValueError(f"Proveedor de LLM no reconocido: {provider}")
 
-        # --- DEBUGGING COMPLETO ---
-        print(f"DEBUG: ----- INICIO RESPUESTA CRUDA DE OLLAMA -----")
-        print(raw_json_str)
-        print(f"DEBUG: ----- FIN RESPUESTA CRUDA DE OLLAMA -----")
-        # --------------------------
-
-        # Si la respuesta está vacía, devuelve un diccionario vacío para evitar el error 'NoneType'
-        if not raw_json_str.strip():
-            print("ADVERTENCIA: Ollama devolvió una respuesta vacía.")
-            return {}
-
-        meeting_data = json.loads(raw_json_str)
-
-        # --- DEBUGGING FINAL ---
-        print(f"DEBUG: JSON parseado de Ollama:\n{json.dumps(meeting_data, indent=2)}")
-        # -----------------------
+        print(f"DEBUG: Respuesta Markdown de {provider}:\n{acta_markdown[:1000]}...")
         
-        return meeting_data
+        if not acta_markdown.strip():
+            print(f"ADVERTENCIA: {provider} devolvió una respuesta vacía.")
+            return "El modelo no generó un acta. Por favor, inténtelo de nuevo."
+            
+        return acta_markdown
 
-    except ollama.ResponseError as e:
-        raise RuntimeError(f"Error de Ollama: {e.error}")
-    except json.JSONDecodeError as e:
-        # Esto ocurre si Ollama no devuelve un JSON válido a pesar de la instrucción
-        raise ValueError(f"Ollama no devolvió un JSON válido. Error de parseo: {e}\n"
-                         f"Respuesta cruda: {raw_json_str if 'raw_json_str' in locals() else 'No se recibió respuesta'}")
     except Exception as e:
-        raise RuntimeError(f"Error inesperado al comunicarse con Ollama: {e}")
+        import traceback
+        print(f"ERROR al procesar con {provider}:")
+        traceback.print_exc()
+        raise e

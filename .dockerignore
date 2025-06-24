@@ -19,3 +19,6 @@ __pycache__/
 # Ignorar el propio Dockerfile y .dockerignore si se desea
 Dockerfile
 .dockerignore
+
+#Archivos Importantes
+.env

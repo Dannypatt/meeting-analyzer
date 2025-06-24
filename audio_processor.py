@@ -1,41 +1,53 @@
-import whisper
 import os
+from dotenv import load_dotenv
+from deepgram import DeepgramClient, PrerecordedOptions, FileSource
 
-def transcribe_audio(file_path):
+# Cargar las variables de entorno para obtener la API Key
+load_dotenv()
+
+def transcribe_audio(file_path: str) -> str:
     """
-    Transcribe un archivo de audio/video a texto usando Whisper.
-    Requiere que FFmpeg esté instalado y en el PATH del sistema.
+    Transcribe un archivo de audio/video a texto usando la API de Deepgram.
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"El archivo no existe: {file_path}")
 
     try:
-        # Cargar el modelo Whisper. Puedes elegir 'tiny', 'base', 'small', 'medium', 'large'
-        # 'base' es un buen equilibrio entre velocidad y precisión para empezar.
-        # Puedes especificar 'model = whisper.load_model("base", device="cuda")' si tienes GPU NVIDIA
-        model = whisper.load_model("large", device="cpu") 
-        
-        # Realizar la transcripción
-        result = model.transcribe(file_path)
-        return result["text"]
-    except Exception as e:
-        # Aquí se podrían añadir más detalles de error, como si FFmpeg no está
-        # Se puede añadir una comprobación de ffmpeg antes de cargar el modelo.
-        raise RuntimeError(f"Error durante la transcripción con Whisper: {e}\n"
-                           "Asegúrese de que FFmpeg esté instalado y en su PATH.")
+        api_key = os.getenv("DEEPGRAM_API_KEY")
+        if not api_key:
+            raise ValueError("No se encontró la DEEPGRAM_API_KEY en el archivo .env")
 
-if __name__ == '__main__':
-    # Ejemplo de uso (esto no se ejecutará en la app principal)
-    # Crea un archivo de audio de prueba o usa uno existente para testear
-    # from moviepy.editor import VideoFileClip
-    # video = VideoFileClip("mi_reunion.mp4")
-    # video.audio.write_audiofile("mi_reunion.wav")
-    
-    # print("Transcribiendo archivo de prueba.wav...")
-    # try:
-    #     transcribed_text = transcribe_audio("mi_reunion.wav")
-    #     print("\n--- Transcripción ---")
-    #     print(transcribed_text[:500] + "...") # Mostrar los primeros 500 caracteres
-    # except Exception as e:
-    #     print(f"Error al transcribir: {e}")
-    pass
+        deepgram = DeepgramClient(api_key)
+
+        with open(file_path, 'rb') as file:
+            buffer_data = file.read()
+
+        payload: FileSource = {
+            "buffer": buffer_data,
+        }
+
+        # --- ¡CONFIGURACIÓN CORREGIDA! ---
+        # Usamos el modelo que Deepgram recomienda para español.
+        options = PrerecordedOptions(
+            model="nova-2-general", # Usando nova-2 que tiene un excelente soporte para español
+            language="es",
+            smart_format=True,
+            punctuate=True,
+            diarize=True,
+            detect_topics=True,
+            paragraphs=True
+        )
+
+        print("DEBUG: Enviando archivo a Deepgram para transcripción...")
+        response = deepgram.listen.prerecorded.v("1").transcribe_file(payload, options)
+        print("DEBUG: Transcripción con Deepgram finalizada.")
+
+        transcript = response.results.channels[0].alternatives[0].transcript
+        
+        if len(transcript) < 50:
+             print(f"ADVERTENCIA: La transcripción generada es muy corta. Contenido: '{transcript}'")
+
+        return transcript
+
+    except Exception as e:
+        raise RuntimeError(f"Error durante la transcripción con Deepgram: {e}")
